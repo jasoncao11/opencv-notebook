@@ -1,11 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Sun Aug 15 18:55:44 2021
-
-@author: fiture
-"""
-
 import cv2
 import mediapipe as mp
 import time

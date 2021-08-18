@@ -1,16 +1,20 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Sun Aug 15 23:44:14 2021
-
-@author: fiture
-"""
 import cv2
 import time
 import numpy as np
 import math
 import HandTrackingModule as htm
-import osascript
+from ctypes import cast, POINTER
+from comtypes import CLSCTX_ALL
+from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+
+devices = AudioUtilities.GetSpeakers()
+interface = devices.Activate(
+    IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+volume = cast(interface, POINTER(IAudioEndpointVolume))
+volrange = volume.GetVolumeRange()
+minvol = volrange[0]
+maxvol = volrange[1]
 
 pTime = 0
 cTime = 0
@@ -24,8 +28,7 @@ while True:
     img = detector.findHands(img)
     lmList = detector.findPosition(img, draw=False)
     if lmList:
-        #print(lmList[4], lmList[8])
-        
+
         x1, y1 = lmList[4][1], lmList[4][2]
         x2, y2 = lmList[8][1], lmList[8][2]
         
@@ -39,14 +42,12 @@ while True:
         length = math.hypot(x2-x1, y2-y1)
         
         # hand range 50-300
-        # volume range 0-100
-        vol = np.interp(length, [50, 300], [0, 100])
+        # volume range -64-0
+        vol = np.interp(length, [50, 300], [minvol, maxvol])
         print(length, vol)
+        volume.SetMasterVolumeLevel(vol, None)
         volbar = np.interp(length, [50, 300], [400, 150])
         volper = np.interp(length, [50, 300], [0, 100])
-
-        vol = f"set volume output volume {vol}"
-        osascript.osascript(vol)
         
         if length < 50:
             cv2.circle(img, (cx, cy), 15, (0, 255, 0), -1)
@@ -64,5 +65,6 @@ while True:
     cv2.imshow('IMage', img)
     if cv2.waitKey(1) & 0xFF == ord('q'):
        break
+   
 cap.release()        
 cv2.destroyAllWindows()
